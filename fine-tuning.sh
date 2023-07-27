@@ -1,0 +1,24 @@
+torchrun --nproc_per_node=1 --master_port=20001 train.py \
+    --model_name_or_path ./pre-trained-model/huggyllama/llama-7b  \
+    --train_file datasets/yesno_task/datatsets/train_pruning.json \
+    --validation_file datasets/yesno_task/datatsets/valid.json \
+    --bf16 True \
+    --output_dir model \
+    --num_train_epochs 1 \
+    --per_device_train_batch_size 2 \
+    --per_device_eval_batch_size 2 \
+    --gradient_accumulation_steps 8 \
+    --evaluation_strategy "no" \
+    --save_strategy "steps" \
+    --save_steps 1200 \
+    --save_total_limit 10 \
+    --learning_rate 5e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --fsdp "full_shard auto_wrap" \
+    --fsdp_transformer_layer_cls_to_wrap 'LlamaDecoderLayer' \
+    --tf32 True \
+    --max_length 512 \
+    --gradient_checkpointing True 
