@@ -44,9 +44,9 @@ pre-trained-model/huggyllama/llama-7b/pytorch_model-00001-of-00002.bin
 model/svm/svm_model.pkl
 
 # dirs
-model/
+# model/
 # datasets/
-pre-trained-model/
+# pre-trained-model/
 wandb/
 .vscode/
 __pycache__/
