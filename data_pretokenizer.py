@@ -1,6 +1,7 @@
 from transformers import AutoTokenizer
 import numpy as np
 from datasets import load_dataset, load_from_disk
+from torch.utils.data import DistributedSampler
 
 tokenizer = AutoTokenizer.from_pretrained(
         "pre-trained-model/huggyllama/llama-7b",
@@ -68,7 +69,7 @@ column_names = raw_datasets["train"].column_names
 #             desc="Running tokenizer on train dataset",
 #         )
 
-eval_dataset = raw_datasets["validation"].select(range(100))
+eval_dataset = raw_datasets["validation"]
 eval_dataset = eval_dataset.map(
             preprocess_function,
             batched=True,
@@ -78,5 +79,5 @@ eval_dataset = eval_dataset.map(
             desc="Running tokenizer on validation dataset",
         )
 
-print(eval_dataset[0]["input_ids"])
-# print(len(eval_dataset[0]["input_ids"][0]))
+
+

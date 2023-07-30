@@ -1,0 +1,72 @@
+{
+  "builder_name": "json",
+  "citation": "",
+  "config_name": "default",
+  "dataset_name": "json",
+  "dataset_size": 94583688,
+  "description": "",
+  "download_checksums": {
+    "/root/zhuxuekai/data_pruning/datasets/natural-instructions-2.8/yesno_task/datatsets/pruning_set/train.json": {
+      "num_bytes": 94115841,
+      "checksum": null
+    },
+    "/root/zhuxuekai/data_pruning/datasets/natural-instructions-2.8/yesno_task/datatsets/valid.json": {
+      "num_bytes": 8534994,
+      "checksum": null
+    }
+  },
+  "download_size": 102650835,
+  "features": {
+    "input_ids": {
+      "feature": {
+        "dtype": "int32",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "token_type_ids": {
+      "feature": {
+        "dtype": "int8",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "attention_mask": {
+      "feature": {
+        "dtype": "int8",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    },
+    "labels": {
+      "feature": {
+        "dtype": "int64",
+        "_type": "Value"
+      },
+      "_type": "Sequence"
+    }
+  },
+  "homepage": "",
+  "license": "",
+  "size_in_bytes": 197234523,
+  "splits": {
+    "train": {
+      "name": "train",
+      "num_bytes": 86692754,
+      "num_examples": 106686,
+      "dataset_name": "json"
+    },
+    "validation": {
+      "name": "validation",
+      "num_bytes": 7890934,
+      "num_examples": 10047,
+      "dataset_name": "json"
+    }
+  },
+  "version": {
+    "version_str": "0.0.0",
+    "major": 0,
+    "minor": 0,
+    "patch": 0
+  }
+}
