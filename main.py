@@ -22,12 +22,12 @@ from transformers import (
 
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
-
-sys.path.append(
-    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
-sys.path.append(
-    "/root/zhuxuekai/data_pruning/DeepSpeedExamples/applications/DeepSpeed-Chat/training")
-from utils.data.data_utils import create_prompt_dataset
+from data_utiles import create_prompt_dataset_hf
+# sys.path.append(
+#     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
+# sys.path.append(
+#     "/root/zhuxuekai/data_pruning/DeepSpeedExamples/applications/DeepSpeed-Chat/training")
+# from utils.data.data_utils import create_prompt_dataset
 from utils.utils import print_rank_0, to_device, save_hf_format, set_random_seed, get_all_reduce_mean, get_optimizer_grouped_parameters, save_zero_three_model, load_hf_tokenizer
 from utils.ds_utils import get_train_ds_config
 from utils.module.lora import convert_linear_layer_to_lora, convert_lora_to_linear_layer, only_optimize_lora_parameters
@@ -180,6 +180,14 @@ def parse_args():
     parser.add_argument('--tensorboard_path',
                         type=str,
                         default="step1_tensorboard")
+    
+    ## wandb logging
+    parser.add_argument('--enable_wandb',
+                        action='store_true',
+                        help='Enable enable_wandb logging')
+    # parser.add_argument('--tensorboard_path',
+    #                     type=str,
+    #                     default="step1_tensorboard")
     ## Print loss
     parser.add_argument('--print_loss',
                         action='store_true',
@@ -213,6 +221,7 @@ def main():
     ds_config = get_train_ds_config(offload=args.offload,
                                     stage=args.zero_stage,
                                     enable_tensorboard=args.enable_tensorboard,
+                                    enable_wandb=args.enable_wandb,
                                     tb_path=args.tensorboard_path,
                                     tb_name="step1_model")
     ds_config[
@@ -245,16 +254,15 @@ def main():
 
     # Prepare the data
     train_phase = 1
-    train_dataset, eval_dataset = create_prompt_dataset(
+    train_dataset, eval_dataset = create_prompt_dataset_hf(
         args.local_rank,
-        args.data_path,
-        args.data_split,
-        args.data_output_path,
-        train_phase,
-        args.seed,
-        tokenizer,
-        args.max_seq_len,
-        sft_only_data_path=args.sft_only_data_path)
+        train_file=args.train_file,
+        valid_file=args.validation_file,
+        output_path=args.data_output_path,
+        tokenizer=tokenizer,
+        max_seq_len=args.max_seq_len,
+        reload=False)
+    
     # DataLoaders creation:
     if args.local_rank == -1:
         train_sampler = RandomSampler(train_dataset)

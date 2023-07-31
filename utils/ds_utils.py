@@ -15,6 +15,7 @@ def get_train_ds_config(offload,
                         tp_gather_partition_size=8,
                         max_out_tokens=512,
                         enable_tensorboard=False,
+                        enable_wandb=False,
                         tb_path="",
                         tb_name=""):
 
@@ -56,6 +57,12 @@ def get_train_ds_config(offload,
             "enabled": enable_tensorboard,
             "output_path": f"{tb_path}/ds_tensorboard_logs/",
             "job_name": f"{tb_name}_tensorboard"
+        },
+        "wandb": {
+            "enabled": enable_wandb,
+            "team": "xuekai-zhu",
+            "group": "my_group",
+            "project": "deepspeed-chat"
         }
     }
 
