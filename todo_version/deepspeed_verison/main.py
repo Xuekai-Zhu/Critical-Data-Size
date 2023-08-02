@@ -19,10 +19,11 @@ from transformers import (
     get_scheduler,
     AutoTokenizer
 )
+from transformers import Trainer
 
 import deepspeed
 from deepspeed.ops.adam import DeepSpeedCPUAdam, FusedAdam
-from data_utiles import create_prompt_dataset_hf
+from todo_version.deepspeed_verison.data_utiles import create_prompt_dataset_hf
 # sys.path.append(
 #     os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 # sys.path.append(
@@ -173,21 +174,18 @@ def parse_args():
     parser.add_argument('--only_optimize_lora',
                         action='store_true',
                         help='Only optimize the LoRA parameters.')
-    ## Tensorboard logging
+    # Tensorboard logging
     parser.add_argument('--enable_tensorboard',
                         action='store_true',
                         help='Enable tensorboard logging')
     parser.add_argument('--tensorboard_path',
                         type=str,
-                        default="step1_tensorboard")
+                        default="tensorboard")
     
     ## wandb logging
     parser.add_argument('--enable_wandb',
                         action='store_true',
                         help='Enable enable_wandb logging')
-    # parser.add_argument('--tensorboard_path',
-    #                     type=str,
-    #                     default="step1_tensorboard")
     ## Print loss
     parser.add_argument('--print_loss',
                         action='store_true',
@@ -200,6 +198,11 @@ def parse_args():
         assert (
             not args.only_optimize_lora
         ), "--gradient_checkpointing and --only_optimize_lora cannot be enabled at the same time."
+    
+    # # if enabled hugging face Trainer
+    # parser.add_argument('--enable_trainer',
+    #                     action='store_true',
+    #                     help='Enable Trainer logging')
 
     return args
 
@@ -334,8 +337,8 @@ def main():
     print_rank_0(
         f"***** Evaluating perplexity, Epoch {0}/{args.num_train_epochs} *****",
         args.global_rank)
-    perplexity = evaluation(model, eval_dataloader)
-    print_rank_0(f"ppl: {perplexity}", args.global_rank)
+    # perplexity = evaluation(model, eval_dataloader)
+    # print_rank_0(f"ppl: {perplexity}", args.global_rank)
 
     for epoch in range(args.num_train_epochs):
         print_rank_0(
@@ -363,7 +366,8 @@ def main():
 
     if args.output_dir is not None:
         print_rank_0('saving the final model ...', args.global_rank)
-        model = convert_lora_to_linear_layer(model)
+        if args.lora_dim > 0:
+            model = convert_lora_to_linear_layer(model)
 
         if args.global_rank == 0:
             save_hf_format(model, tokenizer, args)

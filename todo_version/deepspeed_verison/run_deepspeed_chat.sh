@@ -12,22 +12,25 @@
 #     ZERO_STAGE=2
 # fi
 # mkdir -p $OUTPUT
-
+export NCCL_P2P_LEVEL=NVL
 deepspeed main.py \
    --train_file datasets/yesno_task/datatsets/train_pruning.json \
    --validation_file datasets/yesno_task/datatsets/valid.json \
-   --model_name_or_path pre-trained-model/huggyllama/llama-7b \
-   --per_device_train_batch_size 8 \
-   --per_device_eval_batch_size 8 \
+   --model_name_or_path pre-trained-model/facebook/opt-6.7b \
+   --per_device_train_batch_size 2 \
+   --per_device_eval_batch_size 2 \
    --max_seq_len 512 \
-   --learning_rate 5e-6 \
+   --learning_rate 1e-5 \
    --weight_decay 0. \
-   --num_train_epochs 1 \
-   --gradient_accumulation_steps 8 \
+   --num_train_epochs 3 \
+   --gradient_accumulation_steps 1 \
    --lr_scheduler_type cosine \
    --num_warmup_steps 0 \
    --seed 1234 \
+   --print_loss \
    --zero_stage 3 \
    --deepspeed \
+   --enable_tensorboard \
    --enable_wandb \
+   --print_loss \
    --output_dir model/test 

@@ -1,3 +1,7 @@
-from transformers import AutoTokenizer
+from transformers import BertModel
+from deepspeed.pipe import PipelineModule
+import deepspeed
 
-tokenizer = AutoTokenizer.from_pretrained("/root/zhuxuekai/comparison_methods_of_HITL/pre_trained_model/facebook/opt-1.3b")
+
+import torch.distributed.fsdp._state_dict_utils
+

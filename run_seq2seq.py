@@ -19,24 +19,24 @@ from dataclasses import dataclass, field
 import json
 import pathlib
 from typing import Dict, Optional, Sequence
+import logging
+
 
 import numpy as np
 import torch
 from torch.utils.data import Dataset
 import transformers
-from transformers import Trainer
+from transformers import Trainer, default_data_collator
 from transformers.trainer_pt_utils import LabelSmoother
 from datasets import load_dataset
-from fastchat.conversation import SeparatorStyle
-from fastchat.model.model_adapter import get_conversation_template
 
-from fastchat.train.llama_flash_attn_monkey_patch import (
-    replace_llama_attn_with_flash_attn,
-)
+# from fastchat.train.llama_flash_attn_monkey_patch import (
+#     replace_llama_attn_with_flash_attn,
+# )
 
-replace_llama_attn_with_flash_attn()
+# replace_llama_attn_with_flash_attn()
 
-# IGNORE_TOKEN_ID = LabelSmoother.ignore_index
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -140,34 +140,18 @@ def make_supervised_data_module(
         # final_input = "Instruction: " + instruction + "\n" +  "Question: " + inputs + "\n" + "Answer: " + output
         # batched
         final_input = ["Instruction: " + ins + "\n" + "Question: " + inp + "\n" + "Answer: " + out for ins, inp, out in zip(instruction, inputs, output)] 
-
         model_inputs = tokenizer(final_input, max_length=512, padding=padding, truncation=True, return_tensors="np")
-
-        # if "code" in examples:
         label_ids = model_inputs["input_ids"].copy()
-        # targets = examples["answer"]
-        # Tokenize targets with the `text_target` keyword argument
-        # labels = tokenizer(text_target=targets, max_length=512, padding=padding, truncation=True, return_tensors="np")
-        # assert (model_inputs["input_ids"] == labels["input_ids"]).all()
-        # If we are padding here, replace all tokenizer.pad_token_id in the labels by -100 when we want to ignore
-        # padding in the loss.
-        # if padding == "max_length" and data_args.ignore_pad_token_for_loss:
-        # print(type(labels["input_ids"]))
-        # exit(0)
+
         if padding == "max_length":
-            # labels["input_ids"] = [
-            #     [(l if l != tokenizer.pad_token_id else -100) for l in label] for label in labels["input_ids"]
-            # ]
             label_ids = np.where(label_ids != tokenizer.pad_token_id, label_ids, -100)
             model_inputs["labels"] = label_ids
-            # print(model_inputs["labels"])
-            # print(model_inputs["input_ids"])
-            # print("-------------------")
+
         return model_inputs
     
     column_names = raw_datasets["train"].column_names
     
-    train_dataset = raw_datasets["train"].select(range(100))
+    train_dataset = raw_datasets["train"]
     train_dataset = train_dataset.map(
                 preprocess_function,
                 batched=True,
@@ -177,7 +161,7 @@ def make_supervised_data_module(
                 desc="Running tokenizer on train dataset",
             )
     
-    eval_dataset = raw_datasets["validation"].select(range(100))
+    eval_dataset = raw_datasets["validation"]
     eval_dataset = eval_dataset.map(
                 preprocess_function,
                 batched=True,
@@ -186,19 +170,9 @@ def make_supervised_data_module(
                 # load_from_cache_file=not data_args.overwrite_cache,
                 desc="Running tokenizer on validation dataset",
             )
-    # train_dataset = dataset_cls(data_args.train_file, tokenizer=tokenizer)
-    # eval_dataset = dataset_cls(data_args.validation_file, tokenizer=tokenizer)
-    
-    # train_dataset.save_to_disk("datasets/processed_training_data")
-    # eval_dataset.save_to_disk("datasets/processed_vaild_dataset")
-    
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset)
 
-
-
-
-
-def train():
+def main():
     global local_rank
 
     parser = transformers.HfArgumentParser(
@@ -206,7 +180,7 @@ def train():
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
     local_rank = training_args.local_rank
-    
+
     model = transformers.AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         local_files_only=True,
@@ -223,17 +197,38 @@ def train():
     )
     tokenizer.pad_token = tokenizer.eos_token
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    trainer = Trainer(
-        model=model, tokenizer=tokenizer, args=training_args, **data_module
-    )
     
-    if list(pathlib.Path(training_args.output_dir).glob("checkpoint-*")):
-        trainer.train(resume_from_checkpoint=True)
-    else:
-        trainer.train()
-    trainer.save_state()
-    safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+    # Initialize our Trainer
+    trainer = Trainer(
+        model=model,
+        args=training_args,
+        train_dataset=data_module["train_dataset"] if training_args.do_train else None,
+        eval_dataset=data_module["eval_dataset"] if training_args.do_eval else None,
+        tokenizer=tokenizer,
+        # Data collator will default to DataCollatorWithPadding, so we change it.
+        data_collator=default_data_collator
+    )
+    if training_args.do_train:
+        rank0_print("*** Begin Trianing ***")
+        checkpoint = None
+        if training_args.resume_from_checkpoint is not None:
+            checkpoint = training_args.resume_from_checkpoint
+        train_result = trainer.train(resume_from_checkpoint=checkpoint)
+        
+        trainer.save_model()  # Saves the tokenizer too for easy upload
+        
+        metrics = train_result.metrics
+        trainer.log_metrics("train", metrics)
+        trainer.save_metrics("train", metrics)    
+        trainer.save_state()
+        # safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
+        
+    if training_args.do_eval:
+        rank0_print("*** Evaluate ***")
+        metrics = trainer.evaluate(metric_key_prefix="eval")
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
 
 
 if __name__ == "__main__":
-    train()
+    main()

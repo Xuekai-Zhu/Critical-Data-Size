@@ -9,6 +9,9 @@ wandb/
 __pycache__/
 precoessed_data/
 model/
+DeepSpeedExamples/
+pre-trained-model/
+datasets/
 # files
 datasets/tulu/tulu-hf/xzuyn___json/xzuyn--allenai-tulu-filtered-0a458d814fe817f5/0.0.0/ac0ca5f5289a6cf108e706efcf040422dbbfa8e658dee6a819f20d76bb84d26b/json-train.arrow
 datasets/tulu/tulu-hf/downloads/8a4a147477759e4be7de31dc11916b7ef4c9b74f3402e299718acc176b824b3c
@@ -55,3 +58,5 @@ pre-trained-model/huggyllama/llama-7b/pytorch_model-00002-of-00002.bin
 pre-trained-model/huggyllama/llama-7b/pytorch_model-00001-of-00002.bin
 model/svm/svm_model.pkl
 
+pre-trained-model/facebook/opt-6.7b/pytorch_model-00002-of-00002.bin
+pre-trained-model/facebook/opt-6.7b/pytorch_model-00001-of-00002.bin

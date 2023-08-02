@@ -61,7 +61,7 @@ def get_train_ds_config(offload,
         "wandb": {
             "enabled": enable_wandb,
             "team": "xuekai-zhu",
-            "group": "my_group",
+            "group": "4-gpu-froup",
             "project": "deepspeed-chat"
         }
     }

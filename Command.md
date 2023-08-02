@@ -2,6 +2,7 @@
 
 - pre-trained-model/huggyllama/llama-7b
 -opt-1.3b /root/zhuxuekai/comparison_methods_of_HITL/pre_trained_model/facebook/opt-1.3b
+- /root/pubmodels/transformers/llama-2/llama-2-7b-hf
 **Data Path**
 
 - train set:
