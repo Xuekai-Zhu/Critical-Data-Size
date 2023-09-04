@@ -7,19 +7,18 @@ import logging
 
 
 import numpy as np
-import torch
 from torch.utils.data import Dataset
 import transformers
-from transformers import Trainer, default_data_collator, EarlyStoppingCallback
+from transformers import Trainer, default_data_collator
 from transformers.trainer_pt_utils import LabelSmoother
 from datasets import load_dataset
 import os
 from torch.utils.data import DataLoader
-# from fastchat.train.llama_flash_attn_monkey_patch import (
-#     replace_llama_attn_with_flash_attn,
-# )
-
-# replace_llama_attn_with_flash_attn()
+from tqdm import tqdm
+from data_process import Datasets
+import torch
+import torch.nn as nn
+import deepspeed
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +64,25 @@ class DataArguments:
             )
         },
     )
-    lazy_preprocess: bool = False
+    max_new_tokens: Optional[int] = field(
+        default=16,
+        metadata={
+            "help": (
+                "The maximum total output token length"
+            )
+        },
+    )
+    # dtype: Optional[int] = field(
+    #     default="float16",
+    #     # choices=["float32", "float16", "int8"],
+    #     # type=str,
+    #     # help="data-type"
+    #     metadata={
+    #         "help": (
+    #             "data-type"
+    #         )
+    #     },
+    # )
 
 
 @dataclass
@@ -80,20 +97,13 @@ class TrainingArguments(transformers.TrainingArguments):
     # )
 
 
-local_rank = None
+# local_rank = None
 
 
-def rank0_print(*args):
-    if local_rank == 0:
-        print(*args)
+# def rank0_print(*args):
+#     if local_rank == 0:
+#         print(*args)
 
-def safe_save_model_for_hf_trainer(trainer: transformers.Trainer, output_dir: str):
-    """Collects the state dict and dump to disk."""
-    state_dict = trainer.model.state_dict()
-    if trainer.args.should_save:
-        cpu_state_dict = {key: value.cpu() for key, value in state_dict.items()}
-        del state_dict
-        trainer._save(output_dir, state_dict=cpu_state_dict)  # noqa
 
 
 def make_supervised_data_module(
@@ -123,26 +133,16 @@ def make_supervised_data_module(
         inputs = examples["input"]
         output = examples["output"]
         
-        # Batched input formatting
-        final_input = ["Instruction: " + ins + " \n " + "Question: " + inp + " \n " for ins, inp in zip(instruction, inputs)] 
-        targets = ["Answer: " + out + "\n" for out in output]
-        
-        # Tokenize inputs and targets
-        model_inputs = tokenizer(final_input, max_length=512, padding=padding, truncation=True, return_tensors="np")
-        targets = tokenizer(targets, max_length=8, padding=padding, truncation=True, return_tensors="np")
-        
-        # ignore prefix loss
-        prefix_loss_ignore = np.ones_like(model_inputs["input_ids"]) * (-100)
-        
+        # unbatched
+        # final_input = "Instruction: " + instruction + "\n" +  "Question: " + inputs + "\n" + "Answer: " + output
+        # batched
+        final_input = ["Instruction: " + ins + " \n " + "Question: " + inp + " \n " + "Answer: " for ins, inp, out in zip(instruction, inputs, output)] 
+        model_inputs = tokenizer(final_input, max_length=data_args.max_length, padding=padding, truncation=True, return_tensors="np")
+        # label_ids = model_inputs["input_ids"].copy()
 
-        # Concatenate prefix and target
-        model_inputs["input_ids"] = np.concatenate([model_inputs["input_ids"], targets["input_ids"]], axis=1)
-        model_inputs["attention_mask"] = np.concatenate([model_inputs["attention_mask"], targets["attention_mask"]], axis=1)
-        
-
-        # Create labels and ignore pad token loss
-        model_inputs["labels"] = np.concatenate([prefix_loss_ignore, targets["input_ids"]], axis=1)
-        model_inputs["labels"] = np.where(model_inputs["labels"] != tokenizer.pad_token_id, model_inputs["labels"], -100)
+        # if padding == "max_length":
+        #     label_ids = np.where(label_ids != tokenizer.pad_token_id, label_ids, -100)
+        #     model_inputs["labels"] = label_ids
 
         return model_inputs
     
@@ -189,31 +189,61 @@ def make_supervised_data_module(
         
     return dict(train_dataset=train_dataset, eval_dataset=eval_dataset, test_dataset=test_dataset)
 
+
+
+def move_to_device(data, device):
+    
+    if isinstance(data, dict):
+        return {k: move_to_device(v, device) for k, v in data.items()}
+    elif isinstance(data, torch.Tensor):
+        return data.to(device)
+    else:
+        return data
+
+
 def main():
-    global local_rank
+    # global local_rank
 
     parser = transformers.HfArgumentParser(
         (ModelArguments, DataArguments, TrainingArguments)
     )
     model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-    local_rank = training_args.local_rank
-
-    # config = transformers.AutoConfig.from_pretrained(
-    #     model_args.model_name_or_path,
-    #     local_files_only=True)
-    model = transformers.AutoModelForCausalLM.from_pretrained(
-        model_args.model_name_or_path,
-        local_files_only=True,
-        # cache_dir=training_args.cache_dir,
-    )    
-    # model = transformers.AutoModelForCausalLM.from_config(config)
-    model.config.use_cache = False
+    world_size = int(os.getenv("WORLD_SIZE", "1"))
+    local_rank = int(os.getenv("LOCAL_RANK", "0"))
     
+    device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
+    model = transformers.AutoModelForCausalLM.from_pretrained(
+            model_args.model_name_or_path,
+            local_files_only=True,
+            # cache_dir=training_args.cache_dir,
+            # device_map="auto"
+            # load_in_4bit=True
+            )
+    
+    model.eval()
+    
+    # Initialize the DeepSpeed-Inference engine
+    model = deepspeed.init_inference(model,
+                                    mp_size=world_size,
+                                    dtype=torch.half,
+                                    # checkpoint=None if args.pre_load_checkpoint else args.checkpoint_json,
+                                    # replace_with_kernel_inject=True
+                                    )
+    model.to(device)
+
+    # model = Model(input_size, output_size)
+    # if torch.cuda.device_count() >= 1:
+    #     print("Let's use", torch.cuda.device_count(), "GPUs!")
+    #     # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+    #     model = nn.DataParallel(model).to(device)
+    
+    # model = model.to_bettertransformer()
+    # model.config.use_cache = False
     tokenizer = transformers.AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         local_files_only=True,
         # cache_dir=training_args.cache_dir,
-        # model_max_length=data_args.max_length,
+        model_max_length=data_args.max_length,
         # padding_side="right",
         # use_fast=False,
     )
@@ -221,41 +251,33 @@ def main():
     tokenizer.padding_side = 'left'
     tokenizer.truncation_side = 'left'
     data_module = make_supervised_data_module(tokenizer=tokenizer, data_args=data_args)
-    
-    # Initialize our Trainer
-    trainer = Trainer(
-        model=model,
-        args=training_args,
-        train_dataset=data_module["train_dataset"] if training_args.do_train else None,
-        eval_dataset=data_module["eval_dataset"] if training_args.do_eval else None,
-        tokenizer=tokenizer,
-        # Data collator will default to DataCollatorWithPadding, so we change it.
-        data_collator=default_data_collator,
-        callbacks=[
-                EarlyStoppingCallback(early_stopping_patience=3), 
-                    ]
+    test_dataset = data_module["test_dataset"]
+    test_dataloader = DataLoader(test_dataset.with_format("torch"), batch_size=training_args.per_device_eval_batch_size)
+
+
+    # Prediction
+    logger.info("*** Predict ***")
+    # trainer.model = model.to_bettertransformer()
+    # predict_results = trainer.predict(data_module["test_dataset"])
+    predict_results = []
+    for data in tqdm(test_dataloader):
+        data = move_to_device(data, device)
+        outputs = model.generate(**data, max_new_tokens=data_args.max_new_tokens, 
+                                 num_beams=1, do_sample=False)
+        
+        predictions = outputs.cpu().numpy().tolist()
+        predict_results.extend(predictions)
+    # save
+    predictions = tokenizer.batch_decode(
+        predict_results, 
+        skip_special_tokens=True, 
+        clean_up_tokenization_spaces=True
     )
-    if training_args.do_train:
-        rank0_print("*** Begin Trianing ***")
-        checkpoint = None
-        if training_args.resume_from_checkpoint is not None:
-            checkpoint = training_args.resume_from_checkpoint
-        trainer.train(resume_from_checkpoint=checkpoint)
-        
-        trainer.save_model()  # Saves the tokenizer too for easy upload
-        
-        # metrics = train_result.metrics
-        # trainer.log_metrics("train", metrics)
-        # trainer.save_metrics("train", metrics)    
-        trainer.save_state()
-        # safe_save_model_for_hf_trainer(trainer=trainer, output_dir=training_args.output_dir)
-        
-    if training_args.do_eval:
-        rank0_print("*** Evaluate ***")
-        metrics = trainer.evaluate(metric_key_prefix="eval")
-        trainer.log_metrics("eval", metrics)
-        trainer.save_metrics("eval", metrics)
-    
+    predictions = [json.dumps({"output":pred.strip()}, ensure_ascii=False) for pred in predictions]
+    # print(predictions)
+    output_prediction_file = os.path.join(training_args.output_dir, "generated_predictions.json")
+    with open(output_prediction_file, "w", encoding='utf-8') as writer:
+        writer.write("\n".join(predictions))
 
 
 if __name__ == "__main__":

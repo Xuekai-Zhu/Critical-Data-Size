@@ -3,7 +3,7 @@ import os
 import json
 from tqdm import tqdm
 
-data_dir = "./natural-instructions-2.8/yesno_task/orignal_task/"
+data_dir = "./yesno_task/orignal_task/"
 all_files = os.listdir(data_dir)
 
 all_train = []
@@ -24,7 +24,7 @@ for i in tqdm(all_files):
                 print(file_path)
                 print(item["output"])
                 continue
-            item["output"] = [item["output"][0].lower()]
+            item["output"] = item["output"][0].lower()
             new_ietm = json.dumps(item) + "\n"
             lower_answer_data.append(new_ietm)
             
@@ -53,5 +53,5 @@ def save_data(input_data, save_path):
             f.write(i)
 
 save_data(all_train, "./natural-instructions-2.8/yesno_task/datatsets/train.json")
-save_data(all_vaild, "./natural-instructions-2.8/yesno_task/datatsets/valid.json")
-save_data(all_test, "./natural-instructions-2.8/yesno_task/datatsets/test.json")
+# save_data(all_vaild, "./natural-instructions-2.8/yesno_task/datatsets/valid.json")
+# save_data(all_test, "./natural-instructions-2.8/yesno_task/datatsets/test.json")

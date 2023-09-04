@@ -1,0 +1,23 @@
+accelerate launch --config_file training_config/acceleraye_config_opt_3090_6gpu.json run_seq2seq.py \
+    --do_train \
+    --do_eval \
+    --model_name_or_path /root/zhuxuekai/comparison_methods_of_HITL/pre_trained_model/facebook/opt-1.3b  \
+    --train_file datasets/yesno_data/random_pruning/0.5_train.json \
+    --validation_file datasets/yesno_data/datatsets/valid.json \
+    --output_dir model/from-config-of-opt-1.3b/0.5-pruning \
+    --num_train_epochs 10 \
+    --per_device_train_batch_size 32 \
+    --per_device_eval_batch_size 32 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "epoch" \
+    --save_strategy "epoch" \
+    --learning_rate 1e-5 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --tf32 True \
+    --max_length 512 \
+    --gradient_checkpointing True \
+    --load_best_model_at_end \
+    --report_to wandb
