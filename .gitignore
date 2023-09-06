@@ -195,3 +195,5 @@ model/from-config-of-opt-1.3b/0.2-pruning/checkpoint-1698/pytorch_model.bin
 model/from-config-of-opt-1.3b/0.5-pruning/checkpoint-2124/optimizer.bin
 model/from-config-of-opt-1.3b/0.6-pruning/checkpoint-3396/optimizer.bin
 model/from-config-of-opt-1.3b/0.3-pruning/checkpoint-1275/optimizer.bin
+pre-trained-model/bert-base-uncased/pytorch_model.bin
+.git/objects/pack/pack-a623833ade7ad8ceafa61ca305ccdcb90ed9bd6c.pack
