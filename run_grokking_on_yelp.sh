@@ -14,5 +14,5 @@ NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES="3" python grokking/run_grokking_yelp.py
     --weight_decay 1e-2 \
     --max_length 256 \
     --rescale_num 10 \
-    --experiment_name yelp_grokking_subsubsub_data_0.007_train \
+    --experiment_name yelp_grokking \
     --group_name yelp_grokking
