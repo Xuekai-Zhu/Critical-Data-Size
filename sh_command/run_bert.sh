@@ -1,0 +1,24 @@
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES="5,6" accelerate launch --num_processes 2 --config_file training_config/Bert/bert_3090_8gpu.json run_classifier.py \
+    --do_train \
+    --do_eval \
+    --num_labels 2 \
+    --model_name_or_path pre-trained-model/bert-base-uncased  \
+    --train_file datasets/yesno_task/random_pruning_on_task/0.1_train.json \
+    --validation_file datasets/yesno_task/datatsets/valid.json \
+    --output_dir model/bert-base-from-config-0.1-train  \
+    --num_train_epochs 10 \
+    --per_device_train_batch_size 32 \
+    --per_device_eval_batch_size 32 \
+    --gradient_accumulation_steps 1 \
+    --evaluation_strategy "epoch" \
+    --save_strategy "epoch" \
+    --learning_rate 1e-3 \
+    --weight_decay 0. \
+    --warmup_ratio 0.03 \
+    --lr_scheduler_type "cosine" \
+    --logging_steps 1 \
+    --tf32 True \
+    --max_length 512 \
+    --gradient_checkpointing True \
+    --load_best_model_at_end \
+    --report_to wandb

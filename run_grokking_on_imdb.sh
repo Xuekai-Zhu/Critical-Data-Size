@@ -1,0 +1,18 @@
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES="3" python grokking/run_grokking_imdb.py \
+    --do_train \
+    --if_save false \
+    --num_labels 2 \
+    --dataset_name imdb \
+    --model_name_or_path grokking/model_config/one-layer-bert \
+    --train_file datasets/IMDB/subdatas/0.3_sub_data/0.6_train.json \
+    --test_file datasets/IMDB/test.json \
+    --output_dir model/grokking/imdb_1024/sub_data/bs_trian_128_test_full_data/0.3_train/0.3*0.6_train \
+    --total_steps 700000 \
+    --per_device_train_batch_size 128 \
+    --per_device_eval_batch_size 1024 \
+    --learning_rate 1e-3 \
+    --weight_decay 1e-2 \
+    --max_length 256 \
+    --rescale_num 10 \
+    --experiment_name imdb_grokking_bs_train_128_test_full_data_0.3*0.6_train \
+    --group_name imdb_grokking_sub_data

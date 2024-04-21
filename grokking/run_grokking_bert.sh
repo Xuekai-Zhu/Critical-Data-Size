@@ -1,0 +1,15 @@
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES="0" python grokking/run_grokking_bert_no_trainer.py \
+    --do_train \
+    --num_labels 2 \
+    --model_name_or_path grokking/model_config/one-layer-bert \
+    --train_file datasets/yesno_task/task846/train.json \
+    --test_file datasets/yesno_task/task846/valid+test.json \
+    --output_dir model/grokking/one_layer_bert \
+    --num_train_epochs 500 \
+    --per_device_train_batch_size 32 \
+    --per_device_eval_batch_size 32 \
+    --learning_rate 1e-3 \
+    --weight_decay 1e-2 \
+    --max_length 256 \
+    --rescale_num 10 \
+    --experiment_name task846_one_layer_wd_1e-2_resacle_10_epoch_500

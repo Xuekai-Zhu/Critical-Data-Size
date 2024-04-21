@@ -1,0 +1,18 @@
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES="3" python grokking/run_grokking_yelp.py \
+    --do_train \
+    --if_save false \
+    --num_labels 2 \
+    --dataset_name yelp \
+    --model_name_or_path grokking/model_config/one-layer-bert \
+    --train_file datasets/yelp/subdatas/0.1_subsubdatas/0.01_subsubsubdatas/0.7_train.json \
+    --test_file datasets/yelp/test.json \
+    --output_dir task-wise_grokking/model/sub_data/subsub_data/subsubsub_data/0.007_train \
+    --total_steps 700000 \
+    --per_device_train_batch_size 128 \
+    --per_device_eval_batch_size 1024 \
+    --learning_rate 1e-3 \
+    --weight_decay 1e-2 \
+    --max_length 256 \
+    --rescale_num 10 \
+    --experiment_name yelp_grokking_subsubsub_data_0.007_train \
+    --group_name yelp_grokking

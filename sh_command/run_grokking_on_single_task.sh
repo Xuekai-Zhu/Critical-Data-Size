@@ -1,0 +1,16 @@
+NCCL_P2P_DISABLE=1 CUDA_VISIBLE_DEVICES="0" python grokking/run_grokking_bert_no_trainer.py \
+      --do_train \
+      --num_labels 2 \
+      --dataset_name 30tasks \
+      --model_name_or_path grokking/model_config/one-layer-bert \
+      --train_file datasets/30_tasks_from_instruction_tuning/30_tasks_train_test/task066_timetravel_binary_consistency_classification/train.json \
+      --test_file datasets/30_tasks_from_instruction_tuning/30_tasks_train_test/task066_timetravel_binary_consistency_classification/test.json \
+      --output_dir test \
+      --num_train_epochs 500 \
+      --per_device_train_batch_size 128 \
+      --per_device_eval_batch_size 128 \
+      --learning_rate 1e-3 \
+      --weight_decay 1e-2 \
+      --max_length 256 \
+      --rescale_num 10 \
+      --experiment_name task066_v2_one_layer_wd_1e-2_resacle_10_epoch_500

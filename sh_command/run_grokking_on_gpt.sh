@@ -1,0 +1,18 @@
+CUDA_VISIBLE_DEVICES="0" python grokking/run_grokking_on_gpt.py \
+    --do_train \
+    --if_save false \
+    --num_labels 2 \
+    --dataset_name imdb \
+    --model_name_or_path grokking/model_config/one-layer-openai-gpt \
+    --train_file datasets/IMDB/train.json \
+    --test_file datasets/IMDB/test.json \
+    --output_dir model/grokking/imdb_1024/imdb_gpt_wd_1e-2_rescale_50_v3 \
+    --num_train_epochs 1000 \
+    --per_device_train_batch_size 32 \
+    --per_device_eval_batch_size 32 \
+    --learning_rate 1e-3 \
+    --weight_decay 1e-2 \
+    --max_length 256 \
+    --rescale_num 50 \
+    --experiment_name imdb_grokking_gpt_wd_1e-2_rescale_50_v3 \
+    --group_name imdb_grokking_gpt
