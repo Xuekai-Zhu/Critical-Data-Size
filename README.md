@@ -30,8 +30,6 @@ sh run_grokking_on_imdb.sh
 sh run_grokking_on_yelp.sh
 ```
 
-PS: I apologize for the brief and rapid commit; we will continue to update our code in the future. If there are any issues, please raise an issue. Thanks !
-
 ## Citation
 ```shell
 @article{zhu2024critical,
