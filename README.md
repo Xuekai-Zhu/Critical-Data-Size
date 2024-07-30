@@ -29,13 +29,3 @@ sh run_grokking_on_imdb.sh
 ```shell
 sh run_grokking_on_yelp.sh
 ```
-
-## Citation
-```shell
-@article{zhu2024critical,
-  title={Critical data size of language models from a grokking perspective},
-  author={Zhu, Xuekai and Fu, Yao and Zhou, Bowen and Lin, Zhouhan},
-  journal={arXiv preprint arXiv:2401.10463},
-  year={2024}
-}
-```
