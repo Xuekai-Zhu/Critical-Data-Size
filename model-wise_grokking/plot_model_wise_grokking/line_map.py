@@ -7,6 +7,7 @@ from tqdm import tqdm
 from scipy.ndimage import gaussian_filter
 import torch
 import statsmodels.api as sm
+from matplotlib.ticker import MaxNLocator
 
 def extract_final_acc(train_log, key=None, step=None):
     log_ist = []
@@ -78,6 +79,7 @@ def line_figure_with_reg(pruning_levels, accuracies, save_file, top_y=None):
 
     # Create a figure and a set of subplots
     fig, ax = plt.subplots(figsize=(8, 6))
+    # ax.set_yscale('log')
 
     # Plot estimated values and actual values
     ax.plot(x, y_est, '-')  # Estimations with the second color in palette
@@ -92,8 +94,9 @@ def line_figure_with_reg(pruning_levels, accuracies, save_file, top_y=None):
 
     # Set the labels and title
     ax.set_xlabel('Hidden Size', fontsize=15)
-    ax.set_ylabel('Avg Acc (%)', fontsize=15)
+    ax.set_ylabel('Avg Acc', fontsize=15)
     ax.set_title('Average Accuracy vs. Hidden Size')
+    ax.yaxis.set_major_locator(MaxNLocator(nbins=2)) 
 
     # Configure grid and spines
     ax.grid(True, linestyle='--', alpha=0.5)
@@ -138,4 +141,4 @@ if __name__ == '__main__':
     
     # heatmap_data_frac(base_dir)
     
-    line_map_for_grokking(base_dir, "model-wise_grokking/plot_model_wise_grokking/figures/line_figure.png")
+    line_map_for_grokking(base_dir, "model-wise_grokking/plot_model_wise_grokking/figures/line_figure_log_scale.png")

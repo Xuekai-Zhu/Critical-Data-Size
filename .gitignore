@@ -1235,3 +1235,8 @@ wandb/run-20231103_182545-2ek25ddd/run-2ek25ddd.wandb
 wandb/run-20231031_000728-dguk6zf8/logs/debug-internal.log
 wandb/run-20231101_191521-kyknmfc7/run-kyknmfc7.wandb
 no_use_files/
+log/
+*.err
+*.out
+nips_rebuttal/
+model-wise_grokking/

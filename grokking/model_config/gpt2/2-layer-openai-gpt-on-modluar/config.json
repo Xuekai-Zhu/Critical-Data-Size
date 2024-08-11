@@ -1,0 +1,31 @@
+{
+  "afn": "gelu",
+  "architectures": [
+    "OpenAIGPTLMHeadModel"
+  ],
+  "attn_pdrop": 0,
+  "embd_pdrop": 0,
+  "initializer_range": 0.02,
+  "layer_norm_epsilon": 1e-05,
+  "model_type": "openai-gpt",
+  "n_ctx": 128,
+  "n_embd": 128,
+  "n_head": 4,
+  "n_layer": 2,
+  "n_positions": 128,
+  "n_special": 0,
+  "predict_special_tokens": true,
+  "resid_pdrop": 0,
+  "summary_activation": null,
+  "summary_first_dropout": 0,
+  "summary_proj_to_labels": true,
+  "summary_type": "cls_index",
+  "summary_use_proj": true,
+  "task_specific_params": {
+    "text-generation": {
+      "do_sample": true,
+      "max_length": 50
+    }
+  },
+  "vocab_size": 117
+}

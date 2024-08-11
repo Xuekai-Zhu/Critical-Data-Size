@@ -17,7 +17,7 @@ import os
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import wandb
-
+import itertools
 # logger = logging.getLogger(__name__)
 
 @dataclass
@@ -105,6 +105,14 @@ class TrainingArguments(transformers.TrainingArguments):
     #         "help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."
     #     },
     # )
+    total_steps: Optional[int] = field(
+        default=0,
+        metadata={
+            "help": (
+                "rescale the parameters"
+            )
+        },
+    )
 
 
 # ------------------------------------- Utility Functions ------------------------------------- #
@@ -237,7 +245,7 @@ def setup_wandb(data_args, training_args):
                name=training_args.experiment_name,
                config={
                    "learning_rate": training_args.learning_rate, 
-                   "epochs": training_args.num_train_epochs, 
+                #    "epochs": training_args.num_train_epochs, 
                 #    "total_steps": training_args.total_steps, 
                    "train_batch_size": training_args.per_device_train_batch_size,
                    "test_batch_size": training_args.per_device_eval_batch_size,
@@ -302,8 +310,17 @@ def main():
     setup_wandb(data_args, training_args)
     
     print("*** Begin Trianing ***")
+    
+    if training_args.total_steps == 0:
+        total_iterations = int(training_args.num_train_epochs) * len(train_dataloader)
+    else:
+        total_iterations = training_args.total_steps
+    # train_repeat_dataloader = itertools.cycle(train_dataloader)
+    
     global_steps = 0
-    for epoch in tqdm(range(int(training_args.num_train_epochs))):
+    # for epoch in tqdm(range(int(training_args.num_train_epochs))):
+    # for global_steps in tqdm(range(total_iterations)):
+    while global_steps <= total_iterations:
         model.train()
         for step, data in enumerate(train_dataloader): 
             global_steps += 1 

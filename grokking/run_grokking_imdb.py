@@ -20,11 +20,6 @@ import itertools
 # -------------------- Custom Modules -------------------- #
 from make_supervised_data import make_supervised_data_for_imdb
 
-# Uncomment if logger is needed in the future
-
-
-
-
 # ------------------------------------- Data Classes ------------------------------------- #
 
 @dataclass
@@ -273,7 +268,7 @@ def main():
         
         
         # Evaluation Step
-        if global_steps % 1000 == 0:
+        if global_steps % 10 == 0:
             right_num = 0
             all_num = 0
             model.eval()
