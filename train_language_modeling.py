@@ -79,10 +79,10 @@ def main(args):
 
     training_args = TrainingArguments(
         output_dir=args.checkpoint_dir,
-        evaluation_strategy="epoch",
-        save_strategy="epoch",
-        # eval_steps=1000,
-        # save_steps=1000,
+        evaluation_strategy="steps",
+        save_strategy="steps",
+        eval_steps=1000,
+        save_steps=1000,
         # logging_steps=100,
         learning_rate=4e-4,
         num_train_epochs=5,
